@@ -47,6 +47,19 @@ app.post('/api/recommend-foods', async (req, res) => {
   }
 });
 
+app.get('/api/random-food', async (req, res) => {
+  try {
+    // 모든 음식을 가져와서 랜덤으로 하나 선택
+    const result = await mongoose.connection.collection('foods').findOne({}, { projection: { Sheet1: 1 } });
+    const foods = result.Sheet1;
+    const randomFood = foods[Math.floor(Math.random() * foods.length)];
+    
+    res.json(randomFood);
+  } catch (error) {
+    res.status(500).json({ message: '랜덤 음식 추천 실패', error: error.message });
+  }
+});
+
 // 서버 실행
 app.listen(5001, () => {
   console.log('서버가 포트 5001에서 실행 중입니다.');
