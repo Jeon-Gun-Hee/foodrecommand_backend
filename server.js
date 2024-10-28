@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   nickname: String,
   email: String,
   profile_image: String,
+  favorites: [{ name: String, address: String }] // 찜한 식당 저장을 위한 필드
 });
 const User = userDBConnection.model('User', userSchema);
 
@@ -111,6 +112,88 @@ app.delete('/api/delete-account', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: '회원 탈퇴 중 오류가 발생했습니다.', error: error.message });
+  }
+});
+
+// 찜한 식당 추가 API
+app.post('/api/add-favorite', async (req, res) => {
+  const { email, restaurant } = req.body;
+  console.log("요청 수신:", email, restaurant); // 요청 확인
+
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      // favorites 배열이 없으면 초기화
+      user.favorites = user.favorites || [];
+      user.favorites.push(restaurant);
+      await user.save();
+      console.log('찜한 식당이 추가되었습니다:', restaurant);
+      res.status(200).json({ message: '찜한 식당이 추가되었습니다.' });
+    } else {
+      console.error("사용자를 찾을 수 없습니다.");
+      res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+  } catch (error) {
+    console.error('찜한 식당 추가 오류:', error);
+    res.status(500).json({ message: '찜한 식당 추가 실패', error: error.message });
+  }
+});
+
+// 찜 중복 확인 API
+app.post('/api/check-favorite', async (req, res) => {
+  const { email, restaurant } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      const isFavorite = user.favorites.some(
+        (fav) => fav.name === restaurant.name && fav.address === restaurant.address
+      );
+      return res.json({ exists: isFavorite });
+    } else {
+      return res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('중복 확인 오류:', error);
+    res.status(500).json({ message: '중복 확인 중 오류가 발생했습니다.', error: error.message });
+  }
+});
+
+// 찜한 식당 리스트 가져오기 API
+app.post('/api/get-favorites', async (req, res) => {
+  const { email } = req.body;
+  
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+    res.json(user.favorites); // 사용자 찜한 식당 목록 반환
+  } catch (error) {
+    console.error('찜한 식당 가져오기 오류:', error);
+    res.status(500).json({ message: '찜한 식당을 가져오는 중 오류가 발생했습니다.', error: error.message });
+  }
+});
+
+// 찜한 식당 삭제 API
+app.post('/api/remove-favorite', async (req, res) => {
+  const { email, restaurant } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // favorites 배열에서 해당 식당 삭제
+    user.favorites = user.favorites.filter(
+      (fav) => fav.name !== restaurant.name || fav.address !== restaurant.address
+    );
+    await user.save();
+    console.log('찜한 식당이 삭제되었습니다:', restaurant);
+    res.json({ message: '찜한 식당이 삭제되었습니다.' });
+  } catch (error) {
+    console.error('찜한 식당 삭제 오류:', error);
+    res.status(500).json({ message: '찜한 식당 삭제 실패', error: error.message });
   }
 });
 
