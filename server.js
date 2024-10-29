@@ -1,10 +1,36 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { WebSocketServer } = require('ws');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const http = require('http');
+const server = http.createServer(app);
+
+// WebSocket 서버 설정
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket 클라이언트가 연결되었습니다.');
+
+  ws.on('message', (message) => {
+    console.log('받은 메시지:', message);
+    // 메시지에 응답
+    ws.send(`서버로부터의 응답: ${message}`);
+  });
+
+  ws.on('close', () => {
+    console.log('WebSocket 클라이언트 연결이 종료되었습니다.');
+  });
+});
+
+// WebSocket 서버 연결 오류 해결
+wss.on('error', (error) => {
+  console.error('WebSocket 서버 오류:', error);
+});
 
 // food_db에 연결
 const foodDBConnection = mongoose.createConnection('mongodb://localhost:27017/food_db', {
@@ -196,6 +222,8 @@ app.post('/api/remove-favorite', async (req, res) => {
     res.status(500).json({ message: '찜한 식당 삭제 실패', error: error.message });
   }
 });
+
+
 
 // 서버 시작
 app.listen(5001, () => {
