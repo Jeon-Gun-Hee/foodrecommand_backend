@@ -32,19 +32,12 @@ wss.on('error', (error) => {
   console.error('WebSocket 서버 오류:', error);
 });
 
-// food_db에 연결
-const foodDBConnection = mongoose.createConnection('mongodb://localhost:27017/food_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+const foodDBConnection = mongoose.createConnection('mongodb://localhost:27017/food_db');
 foodDBConnection.once('open', () => console.log('food_db에 연결되었습니다.'));
 foodDBConnection.on('error', (err) => console.error('food_db 연결 오류:', err));
 
 // user_db에 연결
-const userDBConnection = mongoose.createConnection('mongodb://localhost:27017/user_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+const userDBConnection = mongoose.createConnection('mongodb://localhost:27017/user_db');
 userDBConnection.once('open', () => console.log('user_db에 연결되었습니다.'));
 userDBConnection.on('error', (err) => console.error('user_db 연결 오류:', err));
 
